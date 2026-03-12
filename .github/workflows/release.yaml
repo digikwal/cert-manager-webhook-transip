@@ -28,11 +28,14 @@ jobs:
 
       - name: Update versions
         run: |
-          # update the chart version in Chart.yaml
-            sed -i "s/version: 0.0.0/version: ${GITHUB_REF_NAME#v}/" charts/cert-manager-webhook-transip/Chart.yaml
-            sed -i "s/appVersion: \"0.0.0\"/appVersion: \"${GITHUB_REF_NAME#v}\"/" charts/cert-manager-webhook-transip/Chart.yaml
-          # update the chart version in values.yaml
-            sed -i "s/tag: latest/tag: ${GITHUB_REF_NAME#v}/" charts/cert-manager-webhook-transip/values.yaml
+          chart_file="charts/cert-manager-webhook-transip/Chart.yaml"
+          values_file="charts/cert-manager-webhook-transip/values.yaml"
+          version="${GITHUB_REF_NAME#v}"
+
+          sed -Ei "s|^(version: ).*|\\1${version}|" "${chart_file}"
+          sed -Ei "s|^(appVersion: ).*|\\1\"${version}\"|" "${chart_file}"
+          sed -Ei "s|^(  repository: ).*|\\1ghcr.io/${GITHUB_REPOSITORY_OWNER}/cert-manager-webhook-transip|" "${values_file}"
+          sed -Ei "s|^(  tag: ).*|\\1${version}|" "${values_file}"
 
       - name: Install Helm
         uses: azure/setup-helm@v4
