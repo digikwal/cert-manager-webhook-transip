@@ -34,4 +34,7 @@ jobs:
           # When `install-mode` is `binary` (default) the value can be v1.2 or v1.2.3 or `latest` to use the latest version.
           # When `install-mode` is `goinstall` the value can be v1.2.3, `latest`, or the hash of a commit.
           version: v2.1.6
+          # Build golangci-lint with the current workflow Go toolchain to avoid
+          # "file requires newer Go version ... (application built with ...)" panics.
+          install-mode: goinstall
           args: --timeout=30m
