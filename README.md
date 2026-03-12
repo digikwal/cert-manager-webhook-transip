@@ -17,13 +17,26 @@ Follow the [instructions](https://cert-manager.io/docs/installation/) using the 
 
 ### Webhook
 
-#### Using public helm chart
+#### Using OCI chart from GHCR
 
 ```bash
-helm repo add cert-manager-webhook-transip https://demeester.dev/cert-manager-webhook-transip
-# Replace the groupName value with your desired domain
-helm install --namespace cert-manager cert-manager-webhook-transip cert-manager-webhook-transip/cert-manager-webhook-transip
+# Replace OWNER with the GitHub org/user name
+helm install --namespace cert-manager cert-manager-webhook-transip \
+  oci://ghcr.io/OWNER/charts/cert-manager-webhook-transip \
+  --version 1.2.3
 ```
+
+Argo CD `Application` source example:
+
+```yaml
+spec:
+  source:
+    repoURL: ghcr.io/OWNER/charts
+    chart: cert-manager-webhook-transip
+    targetRevision: 1.2.3
+```
+
+For Argo CD, configure the Helm repository with OCI enabled (`enableOCI: "true"`).
 
 #### From local checkout
 
@@ -140,18 +153,27 @@ You can then run the test suite with:
 TEST_ZONE_NAME=example.com. make test
 ```
 
-## Creating new package
+## Releases
 
-To build new Docker image for multiple architectures and push it to hub:
+Releases are fully automated from commits merged to `main`:
 
-```shell
-docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t demeesterdev/cert-manager-webhook-transip:1.2.0 . --push
+- PR commits are validated with commitlint (Conventional Commits).
+- `semantic-release` calculates the next version from Conventional Commits.
+- It creates a git tag (`X.Y.Z`) and GitHub Release automatically.
+- The same workflow publishes:
+  - multi-arch container images to GHCR
+  - Helm OCI charts to GHCR
+
+Conventional Commit examples:
+
+```text
+feat: add retry for transip api client
+fix: handle empty dns response
+feat!: remove deprecated secret key format
 ```
 
-To compile and publish new Helm chart version:
+Commit type impact:
 
-```shell
-helm package charts/cert-manager-webhook-transip
-git checkout gh-pages
-helm repo index . --url https://demeester.dev/cert-manager-webhook-transip/
-```
+- `fix:` -> patch release
+- `feat:` -> minor release
+- `!` or `BREAKING CHANGE:` -> major release
