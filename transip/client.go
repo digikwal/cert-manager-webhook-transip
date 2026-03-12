@@ -2,7 +2,6 @@ package transip
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"strings"
 
@@ -54,12 +53,16 @@ func newClient(cfg ClientConfiguration) (*Client, error) {
 	return &Client{dnsRepo: domain.Repository{Client: client}}, nil
 }
 
-// getHostedDomain returns the hosted domain for the given zone.
+// getHostedDomain returns the hosted domain for the given resolved zone.
 func (c *Client) getHostedDomain(zone string) (string, error) {
-	domainName := extractDomainName(zone)
+	domainName, err := normalizeHostedDomain(zone)
+	if err != nil {
+		return "", err
+	}
+
 	domainRef, err := c.dnsRepo.GetByDomainName(domainName)
 	if err != nil {
-		return "", fmt.Errorf("could net get domain %s: %w", domainName, err)
+		return "", fmt.Errorf("could not get domain %s: %w", domainName, err)
 	}
 
 	return domainRef.Name, nil
@@ -131,14 +134,15 @@ func (c *Client) deleteRecord(
 	return nil
 }
 
-func extractDomainName(zone string) string {
-	authZone, err := util.FindZoneByFqdn(context.TODO(), zone, util.RecursiveNameservers)
-
-	if err != nil {
-		fmt.Printf("could not get zone by fqdn %v", err)
-		return zone
+func normalizeHostedDomain(zone string) (string, error) {
+	domainName := util.UnFqdn(zone)
+	if domainName == "" {
+		return "", fmt.Errorf("resolved zone is empty")
 	}
-	return util.UnFqdn(authZone)
+	if !strings.Contains(domainName, ".") {
+		return "", fmt.Errorf("resolved zone %q is not a registrable domain", domainName)
+	}
+	return domainName, nil
 }
 
 func extractRecordName(fqdn, domainName string) string {
