@@ -30,7 +30,7 @@ jobs:
         with:
           images: |
             name=ghcr.io/${{ github.repository_owner }}/cert-manager-webhook-transip,enable=${{ github.event_name != 'pull_request' }}
-            name=${{ vars.DOCKERHUB_IMAGE }},enable=${{ vars.DOCKERHUB_IMAGE != '' && github.event_name != 'pull_request' }}
+            name=${{ vars.DOCKERHUB_IMAGE || format('ghcr.io/{0}/cert-manager-webhook-transip', github.repository_owner) }},enable=${{ vars.DOCKERHUB_IMAGE != '' && github.event_name != 'pull_request' }}
           tags: |
             type=ref,event=branch,enable=${{ github.event_name != 'pull_request' }}
             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
