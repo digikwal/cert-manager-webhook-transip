@@ -24,6 +24,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Determine build platforms
+        id: platforms
+        env:
+          BUILD_ARM: ${{ vars.BUILD_ARM || 'false' }}
+        run: |
+          if [ "${BUILD_ARM}" = "true" ]; then
+            echo "value=linux/amd64,linux/arm64,linux/arm/v7" >> "$GITHUB_OUTPUT"
+            echo "enable_qemu=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=linux/amd64" >> "$GITHUB_OUTPUT"
+            echo "enable_qemu=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -38,6 +51,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Set up QEMU
+        if: steps.platforms.outputs.enable_qemu == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -75,7 +89,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ steps.platforms.outputs.value }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
