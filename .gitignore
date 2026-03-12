@@ -29,8 +29,12 @@ go.work.sum
 
 # env file
 .env
+/.vscode
 
 # Make artifacts
 
 \_out
 \_test
+
+# Editor settings
+.vscode/
